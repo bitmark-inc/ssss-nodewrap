@@ -3,6 +3,10 @@
  *  // refer ssss.c
  *
  *  Custom by bachlx- bachlx@bitmark.com
+ *  //build lib
+ *  gcc -O2 -shared -fpic ssss_custom.c -o ssss_custom.so -lgmp
+ *  // build execute
+ *  gcc -O2 -o ssss_custom ssss_custom.c -lgmp
  */
 
 #include <stdlib.h>
@@ -24,12 +28,13 @@
 #define MAXDEGREE 1024
 #define MAXTOKENLEN 128
 #define MAXLINELEN (MAXTOKENLEN + 1 + 10 + 1 + MAXDEGREE / 4 + 10)
+typedef char* my_string;
 
- #if defined(WIN32) || defined(_WIN32)
- #define EXPORT __declspec(dllexport)
- #else
- #define EXPORT
- #endif
+#if defined(WIN32) || defined(_WIN32)
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
 /* coefficients of some irreducible polynomials over GF(2) */
 static const unsigned char irred_coeff[] = {
@@ -234,6 +239,8 @@ void cprng_read(mpz_t x)
     if ((i = read(cprng, buf + count, degree / 8 - count)) < 0) {
       close(cprng);
       fatal("couldn't read from " RANDOM_SOURCE);
+    } else {
+      printf("%d\n", i);
     }
   mpz_import(x, degree / 8, 1, 1, 0, 0, buf);
 }
@@ -362,7 +369,7 @@ int restore_secret(int n, void *A, mpz_t b[])
 }
 //==================================================================================================
 //  custome code
-EXPORT char** split_custom(char* buf, int t, int n)
+EXPORT int split_custom(my_string* sharedKeys, my_string buf, int t, int n)
 {
   //init of main
   tcgetattr(0, &echo_orig);
@@ -377,34 +384,45 @@ EXPORT char** split_custom(char* buf, int t, int n)
   unsigned int fmt_len;
   mpz_t x, y, coeff[opt_threshold];
   //retun data
-  char** sharedKeys = malloc(opt_number * sizeof(char*));
+  // sharedKeys = malloc(opt_number * sizeof(my_string));
 
   for(fmt_len = 1, i = opt_number; i >= 10; i /= 10, fmt_len++);
   deg = opt_security ? opt_security : MAXDEGREE;
 
   if (! opt_security) {
     opt_security = opt_hex ? 4 * ((strlen(buf) + 1) & ~1): 8 * strlen(buf);
+     if (! opt_quiet)
+      fprintf(stderr, "Using a %d bit security level.\n", opt_security);
   }
 
+  printf("run 1\n");
   field_init(opt_security);
+  printf("run 2\n");
   mpz_init(coeff[0]);
+  printf("run 3\n");
   field_import(coeff[0], buf, opt_hex);
+  printf("run 4\n");
 
   if (opt_diffusion && degree >= 64) {
     encode_mpz(coeff[0], ENCODE);
   }
+  printf("run 5\n");
 
   cprng_init();
+  printf("run 6 %d\n", opt_threshold);
   for(i = 1; i < opt_threshold; i++) {
+    printf("run 7 %d\n", i);
     mpz_init(coeff[i]);
+    printf("run 8 %d\n", i);
     cprng_read(coeff[i]);
   }
+  printf("run 9\n");
   cprng_deinit();
 
   mpz_init(x);
   mpz_init(y);
 
-  char* result;
+  my_string result;
   for(i = 0; i < opt_number; i++) {
     mpz_set_ui(x, i + 1);
     horner(opt_threshold, y, x, (const mpz_t*)coeff);
@@ -415,6 +433,7 @@ EXPORT char** split_custom(char* buf, int t, int n)
     strcpy(sharedKeys[i], index);
     strcat(sharedKeys[i], "-");
     strcat(sharedKeys[i], result);
+    printf("%s\n", sharedKeys[i]);
   }
   mpz_clear(y);
   mpz_clear(x);
@@ -422,10 +441,10 @@ EXPORT char** split_custom(char* buf, int t, int n)
   for(i = 0; i < opt_threshold; i++)
     mpz_clear(coeff[i]);
   field_deinit();
-  return sharedKeys;
+  return 1;
 }
 
-EXPORT char* combine_custom(char ** shares)
+EXPORT int combine_custom(my_string result, my_string* shares)
 {
   mpz_t A[opt_threshold][opt_threshold], y[opt_threshold], x;
   char buf[MAXLINELEN];
@@ -436,11 +455,11 @@ EXPORT char* combine_custom(char ** shares)
   mpz_init(x);
 
   for (i = 0; i < opt_threshold; i++) {
+    printf("%s %d\n", shares[i], strlen(shares[i]));
     strcpy(buf, shares[i]);
-    buf[strcspn(buf, "\r\n")] = '\0';
     if (! (a = strchr(buf, '-')))
     {
-      return "";
+      return -1;
     }
     *a++ = 0;
     if ((b = strchr(a, '-')))
@@ -452,19 +471,19 @@ EXPORT char* combine_custom(char ** shares)
       s = 4 * strlen(b);
       if (! field_size_valid(s))
       {
-        return "";
+        return -1;
       }
       field_init(s);
     }
     else
       if (s != 4 * strlen(b))
       {
-        return "";
+        return -1;
       }
 
     if (! (j = atoi(a)))
     {
-      return "";
+      return -1;
     }
     mpz_set_ui(x, j);
     mpz_init_set_ui(A[opt_threshold - 1][i], 1);
@@ -480,7 +499,7 @@ EXPORT char* combine_custom(char ** shares)
   mpz_clear(x);
   if (restore_secret(opt_threshold, A, y))
   {
-    return "";
+    return -1;
   }
 
   if (opt_diffusion) {
@@ -491,9 +510,10 @@ EXPORT char* combine_custom(char ** shares)
   }
 
   size_t t;
-  char* result = malloc(MAXDEGREE / 8 + 1);
-  memset(result, degree / 8 + 1, 0);
-  mpz_export(result, &t, 1, 1, 0, 0, y[opt_threshold - 1]);
+  char * temp = malloc(MAXDEGREE / 8 + 1);
+  memset(temp, degree / 8 + 1, 0);
+  mpz_export(temp, &t, 1, 1, 0, 0, y[opt_threshold - 1]);
+  strcpy(result, temp);
 
   for (i = 0; i < opt_threshold; i++) {
     for (j = 0; j < opt_threshold; j++)
@@ -501,23 +521,26 @@ EXPORT char* combine_custom(char ** shares)
     mpz_clear(y[i]);
   }
   field_deinit();
-  return result;
+  printf("%s - %d \n", result, strlen(result));
+  return strlen(result);
 }
 
 int main()
 {
   int i, t = 3, n = 5 ;
-  char** result  = (char**) split_custom("lexuanbach", t, n);
+  my_string result[n];
+  split_custom(result, "1234567890123456789012", t, n);
   for (i = 0; i < n; i++) {
     printf("%s\n", result[i]);
   }
 
-  char* result1 = "1-c998761bb75aff94ed73";
-  char* result2 = "2-c5e5fd6c07c549cbbaa5";
-  char* result3 = "3-b41b4d6006c406c17da9";
-  char* result4 = "4-3a99dd6e1b17df3574b3";
-  char* result5 = "5-4b676d621a16903fb3ad";
+  my_string result1 = "1-c998761bb75aff94ed73";
+  my_string result2 = "2-c5e5fd6c07c549cbbaa5";
+  my_string result3 = "3-b41b4d6006c406c17da9";
+  my_string result4 = "4-3a99dd6e1b17df3574b3";
+  my_string result5 = "5-4b676d621a16903fb3ad";
   char * temp[] = {result4, result1, result2};
-  char* secret = combine_custom(temp);
-  printf("%s\n", secret);
+  char* secret =  malloc(MAXDEGREE / 8 + 1);
+  combine_custom((my_string)secret, temp);
+  printf("%s - %d \n", secret, strlen(secret));
 }
