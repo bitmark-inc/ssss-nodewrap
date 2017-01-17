@@ -25,6 +25,12 @@
 #define MAXTOKENLEN 128
 #define MAXLINELEN (MAXTOKENLEN + 1 + 10 + 1 + MAXDEGREE / 4 + 10)
 
+ #if defined(WIN32) || defined(_WIN32)
+ #define EXPORT __declspec(dllexport)
+ #else
+ #define EXPORT
+ #endif
+
 /* coefficients of some irreducible polynomials over GF(2) */
 static const unsigned char irred_coeff[] = {
   4,3,1,5,3,1,4,3,1,7,3,2,5,4,3,5,3,2,7,4,2,4,3,1,10,9,3,9,4,2,7,6,2,10,9,
@@ -356,7 +362,7 @@ int restore_secret(int n, void *A, mpz_t b[])
 }
 //==================================================================================================
 //  custome code
-char** split_custom(char* buf, int t, int n)
+EXPORT char** split_custom(char* buf, int t, int n)
 {
   //init of main
   tcgetattr(0, &echo_orig);
@@ -419,7 +425,7 @@ char** split_custom(char* buf, int t, int n)
   return sharedKeys;
 }
 
-char* combine_custom(char ** shares)
+EXPORT char* combine_custom(char ** shares)
 {
   mpz_t A[opt_threshold][opt_threshold], y[opt_threshold], x;
   char buf[MAXLINELEN];

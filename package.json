@@ -1,0 +1,48 @@
+{
+  "name": "ssss-nodewrap",
+  "version": "0.0.1",
+  "description": "Nodejs wraper for ssss - shamir secret sharing",
+  "main": "src/js/ssss.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:bitmark-inc/ssss-nodewrap.git"
+  },
+  "keywords": [
+    "shamir",
+    "secret",
+    "share",
+    "sharing"
+  ],
+  "author": {
+    "name": "bitmark-inc"
+  },
+  "license": "Public domain",
+  "bugs": {
+    "url": "https://github.com/bitmark-inc/ssss-nodewrap/issues"
+  },
+  "engines": {
+    "node": ">=7.2.0"
+  },
+  "dependencies": {
+    "bindings": "~1.2.0",
+    "debug": "2",
+    "ffi": "^2.1.0",
+    "nan": "2",
+    "ref": "1",
+    "ref-struct": "1"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "tape": "^4.0.0"
+  },
+  "browser": {
+    "buffer": false,
+    "crypto": false
+  },
+  "scripts": {
+    "install": "node scripts/install_dependencies.js"
+  }
+}
