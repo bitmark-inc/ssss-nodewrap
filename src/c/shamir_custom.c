@@ -3,7 +3,7 @@
  * Custom from shamir.c
  *
  * gcc -W -Wall -O2 -shared -fpic shamir_custom.c -o shamir.so -lgmp
- *
+ * gcc -W -Wall -O2 -shared -fpic  -dynamiclib -undefined suppress -o shamir.dylib shamir_custom.c -flat_namespace  -lgmp -I /usr/local/include -L /usr/local/lib
  */
 
 #include <stdio.h>
