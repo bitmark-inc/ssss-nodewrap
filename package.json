@@ -1,6 +1,6 @@
 {
   "name": "ssss-nodewrap",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Nodejs wraper for ssss - shamir secret sharing",
   "main": "src/js/ssss.js",
   "directories": {
