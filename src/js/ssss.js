@@ -9,6 +9,8 @@ var ArrayType = require('ref-array');
 
 var StringArray = ArrayType('CString');
 
+require('./load-extend-lib');
+
 // get root dir
 var root_dir;
 if (ffi.LIB_EXT === '.dll') {

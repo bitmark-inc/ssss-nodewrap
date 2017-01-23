@@ -2,35 +2,25 @@ var ssss = require('../../src/js/ssss.js')();
 
 var abc = '22QqnQxKCED1FPK9QZXtrk4MHhc1tZ7AcWtAwP5n644MRXq9zkbUFf';
 
-var results = ssss.split(abc, 3, 5, false);
-console.log('original : ', abc);
-for (var i = 0; i < 5; i ++) {
-	console.log(results[i]);
+for (var i =0; i< 50; i++ ) {
+	var results = ssss.split(abc, 3, 5, false);
+	console.log('original : ', abc, results);
+
+
+
+	var shares = [results[0], results[1], results[2]];
+	var result = ssss.combine(shares, false);
+	console.log('original : ', abc);
+	console.log('combine  : ', result.toString());
+
+	console.log('=================================================', i);
 }
 
 
-var shares = [results[0], results[1], results[2]];
-var result = ssss.combine(shares, false);
-console.log('original : ', abc);
-console.log('combine  : ', result.toString());
-
-
-
-console.log('=================================================');
-
-
-var abc = Buffer.from('123456789012345678901234567890123456789').toString('hex');
-var results = ssss.split(abc, 3, 5, true);
-console.log('original : ', abc);
-for (var i = 0; i < 5; i ++) {
-	console.log(results[i]);
-}
-
-
-var shares = [results[0], results[1], results[2]];
-var result = ssss.combine(shares, true);
-console.log('original : ', abc);
-console.log('combine  : ', result, result.trim().length);
+// var shares = [results[0], results[1], results[2]];
+// var result = ssss.combine(shares, true);
+// console.log('original : ', abc);
+// console.log('combine  : ', result, result.trim().length);
 
 
 // var shares = [
