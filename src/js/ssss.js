@@ -25,10 +25,10 @@ module.exports = function() {
     'wrapped_combine': [ 'int', ['CString', 'int', StringArray, 'int', 'bool', 'bool']  ]
   });
   var ssFactory = {};
-  ssFactory.split = function(secret, t, n) {
+  ssFactory.split = function(secret, t, n, hexmode) {
   	var tempResult = new StringArray(n);
     var randomBytes = crypto.randomBytes(t * 128);
-    ct.wrapped_split(tempResult, secret, 0, t, n, false, null, false, randomBytes, randomBytes.length);
+    ct.wrapped_split(tempResult, secret, 0, t, n, false, null, hexmode, randomBytes, randomBytes.length);
     var results = [];
     for (var i = 0; i < n; i ++) {
     	results.push(tempResult[i].toString('hex'));
@@ -36,7 +36,7 @@ module.exports = function() {
     return results;
   };
 
-  ssFactory.combine = function(shares) {
+  ssFactory.combine = function(shares, hexmode) {
     var tempSize = MAXDEGREE;
   	var result = (new Buffer(tempSize)).fill(0);
   	shares.forEach(function(item) {
@@ -44,8 +44,8 @@ module.exports = function() {
   		item = new Buffer(item);
   		item = item.slice(0, length);
   	});
-  	ct.wrapped_combine(result, tempSize, shares, shares.length, false, false);
-  	return result;
+  	var error = ct.wrapped_combine(result, tempSize, shares, shares.length, false, hexmode);
+  	return result.toString().replace(/\0/g, '');
   };
 
   return ssFactory;
